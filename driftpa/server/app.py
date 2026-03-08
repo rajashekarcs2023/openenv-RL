@@ -14,6 +14,7 @@ import os
 # Ensure the driftpa package is importable when run from any working directory
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from fastapi.middleware.cors import CORSMiddleware
 from openenv.core import create_fastapi_app
 from server.environment import DriftPAEnvironment
 from models import DriftPAAction, DriftPAObservation
@@ -24,6 +25,13 @@ app = create_fastapi_app(
     DriftPAEnvironment,
     DriftPAAction,
     DriftPAObservation,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ---------------------------------------------------------------------------

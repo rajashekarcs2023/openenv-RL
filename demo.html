@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DriftPA — Live Demo</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1117; color: #e2e8f0; font-family: 'Courier New', monospace; padding: 20px; }
+h1 { color: #7c3aed; font-size: 1.4em; margin-bottom: 4px; }
+.subtitle { color: #64748b; font-size: 0.8em; margin-bottom: 20px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.panel { background: #1e2130; border: 1px solid #2d3748; border-radius: 8px; padding: 14px; }
+.panel h2 { font-size: 0.75em; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.msg { padding: 8px; margin-bottom: 6px; border-radius: 4px; border-left: 3px solid #444; font-size: 0.78em; }
+.msg.critical { border-left-color: #ef4444; background: #1a0a0a; }
+.msg.high { border-left-color: #f97316; background: #1a1000; }
+.msg.normal { border-left-color: #3b82f6; background: #0a0f1a; }
+.msg.low { border-left-color: #64748b; background: #111; }
+.expires { color: #ef4444; font-size: 0.7em; margin-top: 2px; }
+.cal-event { padding: 6px 8px; margin-bottom: 4px; background: #111827; border-radius: 4px; font-size: 0.78em; }
+.conflict { border: 1px solid #ef4444; }
+select, input { background: #111827; border: 1px solid #374151; color: #e2e8f0; padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 0.8em; }
+button { padding: 8px 18px; border-radius: 4px; border: none; cursor: pointer; font-family: monospace; font-size: 0.85em; font-weight: bold; }
+.btn-reset { background: #7c3aed; color: white; }
+.btn-step { background: #059669; color: white; }
+.score { font-size: 1.8em; font-weight: bold; }
+.pos { color: #34d399; }
+.neg { color: #f87171; }
+.drift-warning { background: #451a03; border: 1px solid #f97316; border-radius: 4px; padding: 8px 12px; font-size: 0.8em; color: #fdba74; margin-top: 8px; display: none; }
+.last-result { color: #a78bfa; font-size: 0.85em; white-space: pre-wrap; line-height: 1.6; }
+.tool-chip { background: #1e3a5f; color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.7em; display: inline-block; margin: 2px; }
+.policy-row { display: flex; justify-content: space-between; font-size: 0.75em; padding: 3px 0; border-bottom: 1px solid #1e2130; color: #94a3b8; }
+.policy-row span:last-child { color: #e2e8f0; }
+</style>
+</head>
+<body>
+
+<h1>⚡ DriftPA — Personal Assistant RL Environment</h1>
+<p class="subtitle">Schema drift · Time pressure · Irreversible actions · Policy drift</p>
+
+<div style="display:flex; gap:16px; align-items:center; margin-bottom:16px;">
+  <button class="btn-reset" onclick="resetEp()">↺ RESET (seed=0)</button>
+  <span style="color:#64748b; font-size:0.85em;">Reward:</span>
+  <span class="score" id="total-reward">—</span>
+  <span id="step-badge" style="background:#374151; padding:2px 10px; border-radius:12px; font-size:0.75em; color:#94a3b8;">step 0/15</span>
+  <span id="status" style="color:#64748b; font-size:0.75em;"></span>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <h2>📬 Inbox</h2>
+    <div id="inbox"><span style="color:#64748b">Press RESET to load episode</span></div>
+  </div>
+  <div class="panel">
+    <h2>📅 Calendar</h2>
+    <div id="calendar">—</div>
+    <h2 style="margin-top:12px;">📋 Policy</h2>
+    <div id="policy">—</div>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom:16px;">
+  <h2>🎮 Take Action</h2>
+  <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+    <select id="tool-select" onchange="updateHint()">
+      <option value="list_tools">list_tools</option>
+      <option value="query_policy">query_policy</option>
+      <option value="read_calendar">read_calendar</option>
+      <option value="read_message">read_message</option>
+      <option value="reply_message">reply_message ⚠️</option>
+      <option value="move_event">move_event</option>
+      <option value="book_restaurant">book_restaurant ⚠️</option>
+      <option value="book_ride">book_ride ⚠️</option>
+      <option value="cancel_booking">cancel_booking ⚠️</option>
+      <option value="finish">finish</option>
+    </select>
+    <input id="payload" value="{}" style="flex:1; min-width:220px;" />
+    <button class="btn-step" onclick="takeStep()">▶ STEP</button>
+  </div>
+  <div id="hint" style="color:#64748b; font-size:0.72em; margin-top:6px;"></div>
+</div>
+
+<div class="panel">
+  <h2>📊 Result</h2>
+  <div id="last-result" class="last-result">Reset the episode to begin.</div>
+  <div id="drift-warning" class="drift-warning">⚠️ SCHEMA DRIFT DETECTED — call list_tools() to see new field names!</div>
+  <h2 style="margin-top:12px;">🔧 Available Tools</h2>
+  <div id="tools" style="margin-top:6px;">—</div>
+</div>
+
+<script>
+const API = 'https://rajv24-driftpa.hf.space';
+let totalReward = 0, prevToolKeys = null;
+
+const HINTS = {
+  list_tools: '{}',
+  query_policy: '{}',
+  read_calendar: '{}',
+  read_message: '{"message_id": "msg_boss"}',
+  reply_message: '{"message_id": "msg_boss", "text": "On it — moving the call to 7pm."}',
+  move_event: '{"event_id": "cal_investor", "new_time": "20:00"}',
+  book_restaurant: '{"party_size": 2, "date": "2024-01-15", "time": "19:00", "restaurant": "Nobu"}',
+  book_ride: '{"pickup_time": "21:00", "destination": "Home"}',
+  cancel_booking: '{"booking_id": "booking_1"}',
+  finish: '{}',
+};
+
+function updateHint() {
+  const t = document.getElementById('tool-select').value;
+  document.getElementById('payload').value = HINTS[t] || '{}';
+}
+
+async function resetEp() {
+  totalReward = 0; prevToolKeys = null;
+  document.getElementById('total-reward').textContent = '0';
+  document.getElementById('total-reward').className = 'score';
+  document.getElementById('drift-warning').style.display = 'none';
+  document.getElementById('status').textContent = 'Loading...';
+  try {
+    const r = await fetch(API + '/reset', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({seed:0}) });
+    const d = await r.json();
+    renderObs(d.observation);
+    document.getElementById('last-result').textContent = 'Episode started. You have 15 steps. Boss email expires at step 4!';
+    document.getElementById('status').textContent = '✅ Hero scenario loaded';
+  } catch(e) { document.getElementById('status').textContent = '❌ ' + e.message; }
+}
+
+async function takeStep() {
+  const tool = document.getElementById('tool-select').value;
+  let payload;
+  try { payload = JSON.parse(document.getElementById('payload').value); }
+  catch(e) { alert('Invalid JSON'); return; }
+  document.getElementById('status').textContent = 'Running ' + tool + '...';
+  try {
+    const r = await fetch(API + '/step', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:{tool_name:tool, payload}}) });
+    const d = await r.json();
+    const rw = d.reward || 0;
+    totalReward += rw;
+    const el = document.getElementById('total-reward');
+    el.textContent = (totalReward >= 0 ? '+' : '') + totalReward.toFixed(1);
+    el.className = 'score ' + (totalReward >= 0 ? 'pos' : 'neg');
+    const sign = rw >= 0 ? '+' : '';
+    document.getElementById('last-result').innerHTML =
+      `<span class="${rw>=0?'pos':'neg'}">${sign}${rw.toFixed(1)}</span>  ${d.observation.last_action_result || ''}`;
+    renderObs(d.observation);
+    document.getElementById('status').textContent = d.done ? '🏁 Done' : `step ${d.observation.time_step}/15`;
+
+    const keys = JSON.stringify(Object.keys(d.observation.available_tools || {}).sort());
+    if (prevToolKeys && keys !== prevToolKeys)
+      document.getElementById('drift-warning').style.display = 'block';
+    prevToolKeys = keys;
+  } catch(e) { document.getElementById('status').textContent = '❌ ' + e.message; }
+}
+
+function renderObs(obs) {
+  document.getElementById('step-badge').textContent = `step ${obs.time_step}/15`;
+  // Inbox
+  const inbox = document.getElementById('inbox');
+  inbox.innerHTML = (obs.inbox||[]).map(m => `
+    <div class="msg ${m.priority}">
+      <strong>${m.sender}</strong><br>
+      <span style="color:#94a3b8">${m.subject}</span>
+      ${m.expires_at_step ? `<div class="expires">⏰ expires step ${m.expires_at_step}</div>` : ''}
+    </div>`).join('') || '—';
+  // Calendar
+  const times = (obs.calendar||[]).map(e => e.start_time||e.begins_at);
+  document.getElementById('calendar').innerHTML = (obs.calendar||[]).map(e => {
+    const t = e.start_time||e.begins_at, n = e.event_name||e.title;
+    const clash = times.filter(x=>x===t).length > 1;
+    return `<div class="cal-event ${clash?'conflict':''}">${clash?'⚠️ ':''}<strong>${t}</strong> — ${n}</div>`;
+  }).join('') || '—';
+  // Policy
+  document.getElementById('policy').innerHTML = Object.entries(obs.policy||{}).map(([k,v])=>
+    `<div class="policy-row"><span>${k}</span><span>${v}</span></div>`).join('') || '—';
+  // Tools
+  document.getElementById('tools').innerHTML = Object.keys(obs.available_tools||{}).map(t=>
+    `<span class="tool-chip">${t}</span>`).join('') || '—';
+}
+
+updateHint();
+</script>
+</body>
+</html>
