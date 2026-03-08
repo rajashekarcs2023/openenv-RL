@@ -18,10 +18,13 @@ from openenv.core import create_fastapi_app
 from server.environment import DriftPAEnvironment
 from models import DriftPAAction, DriftPAObservation
 
+# Singleton environment instance — state persists across requests
+_env = DriftPAEnvironment()
+
 # create_fastapi_app signature:
-#   create_fastapi_app(env_factory, action_cls, observation_cls) -> FastAPI
+#   create_fastapi_app(env_instance, action_cls, observation_cls) -> FastAPI
 app = create_fastapi_app(
-    DriftPAEnvironment,   # factory callable — called per session
+    _env,
     DriftPAAction,
     DriftPAObservation,
 )
