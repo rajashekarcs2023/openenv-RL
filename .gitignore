@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+.venv/
+claude.md
+context.md
+DEMO.md
+judging criteria.md
+
+.claude
