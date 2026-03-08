@@ -15,8 +15,8 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from openenv.core import create_fastapi_app
-from driftpa.server.environment import DriftPAEnvironment
-from driftpa.models import DriftPAAction, DriftPAObservation
+from server.environment import DriftPAEnvironment
+from models import DriftPAAction, DriftPAObservation
 
 # create_fastapi_app signature:
 #   create_fastapi_app(env_factory, action_cls, observation_cls) -> FastAPI

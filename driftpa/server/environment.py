@@ -20,8 +20,8 @@ from typing import Optional
 
 from openenv.core import Environment
 
-from driftpa.models import DriftPAAction, DriftPAObservation, DriftPAState
-from driftpa.scenarios.generator import generate_scenario
+from models import DriftPAAction, DriftPAObservation, DriftPAState
+from scenarios.generator import generate_scenario
 
 # ---------------------------------------------------------------------------
 # Reward constants — NEVER change without flagging
