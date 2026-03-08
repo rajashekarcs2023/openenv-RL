@@ -1,4 +1,4 @@
-FROM ghcr.io/meta-pytorch/openenv-base:latest
+FROM python:3.11-slim
 
 WORKDIR /app
 
