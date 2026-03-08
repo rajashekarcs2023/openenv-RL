@@ -1,0 +1,14 @@
+name: driftpa
+version: "0.1.0"
+description: >
+  Personal assistant RL environment with schema drift, time pressure,
+  and irreversible actions. Trains agents to handle real-world API chaos.
+env_class: driftpa.server.environment.DriftPAEnvironment
+action_class: driftpa.models.DriftPAAction
+observation_class: driftpa.models.DriftPAObservation
+tags:
+  - personal-assistant
+  - schema-drift
+  - policy-drift
+  - irreversible-actions
+  - openenv
