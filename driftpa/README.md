@@ -1,3 +1,18 @@
+---
+title: DriftPA Environment Server
+emoji: 🤖
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+app_port: 8000
+base_path: /web
+tags:
+  - openenv
+  - rl
+  - agent
+---
+
 # DriftPA
 
 **Personal assistant RL environment with schema drift, time pressure, and irreversible actions.**
@@ -29,7 +44,7 @@ from driftpa.client import DriftPAClient
 from driftpa.models import DriftPAAction
 
 # Connect to this HF Space
-env = DriftPAClient.from_env("rajashekarcs2023/driftpa")
+env = DriftPAClient.from_env("rajv24/driftpa")
 result = env.reset(seed=0)  # seed=0 = canonical hero scenario
 
 action = DriftPAAction(tool_name="list_tools", payload={})
