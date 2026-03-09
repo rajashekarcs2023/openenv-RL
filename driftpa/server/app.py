@@ -102,9 +102,9 @@ def root():
 
     <h2>Links</h2>
     <div class="links">
-      <a class="btn" href="/health">✓ Health Check</a>
-      <a class="btn" href="https://github.com/rajashekarcs2023/openenv-RL">⌥ GitHub</a>
-      <a class="btn" href="https://colab.research.google.com/github/rajashekarcs2023/openenv-RL/blob/main/driftpa/colab_training.ipynb">▶ Training Notebook</a>
+      <a class="btn" href="/health" target="_blank">✓ Health Check</a>
+      <a class="btn" href="https://github.com/rajashekarcs2023/openenv-RL" target="_blank">⌥ GitHub</a>
+      <a class="btn" href="https://colab.research.google.com/github/rajashekarcs2023/openenv-RL/blob/main/driftpa/colab_training.ipynb" target="_blank">▶ Training Notebook</a>
     </div>
 
     </body></html>
