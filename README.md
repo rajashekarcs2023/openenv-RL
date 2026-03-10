@@ -32,6 +32,13 @@ A personal executive assistant environment where the agent must resolve cascadin
 3. **Irreversible Actions** — `reply_message`, `book_restaurant`, `book_ride`, `cancel_booking` cannot be undone.
 4. **Policy Drift** — Cancellation window tightens from 2hr → 4hr post-drift.
 
+## Figure: GRPO Training on H100 — Qwen2.5-14B · 
+  **24,000 rollouts · Baseline −9.55 → Post-GRPO −1.10 (Δ = +8.45)** 
+  
+<img width="2286" height="1379" alt="graph_v2" src="https://github.com/user-attachments/assets/dbe4f998-8f01-4304-bb57-5ba430b3eab8" />
+
+   
+
 ## Live Environment
 
 ```
